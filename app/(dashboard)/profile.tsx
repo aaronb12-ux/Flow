@@ -32,7 +32,7 @@ const Profile = () => {
     setNewPassword1("");
     setNewPassword2("");
     setConfirmation(true);
-    setErrorMessage("")
+    setErrorMessage("");
   };
 
   const handledelete = async () => {
@@ -44,10 +44,10 @@ const Profile = () => {
       } else {
         setShowDeleteConfirm(false);
         router.push({ pathname: "/" });
-        setErrorMessage("")
+        setErrorMessage("");
       }
     } catch (error) {
-      setErrorMessage("error deleting account")
+      setErrorMessage("error deleting account");
     }
   };
 
@@ -59,20 +59,17 @@ const Profile = () => {
         throw error;
       } else {
         router.push({ pathname: "/" });
-        setErrorMessage("")
+        setErrorMessage("");
       }
     } catch (error) {
-      setErrorMessage("error logging out. please try again.")
+      setErrorMessage("error logging out. please try again.");
     }
   };
 
   const resetPassword = async () => {
-    
     if (newpassword1.length === 0 || newpassword2.length === 0) {
-         setErrorMessage("password must be at least 6 characters");
-    }
-    
-    else if (newpassword1 === newpassword2) {
+      setErrorMessage("password must be at least 6 characters");
+    } else if (newpassword1 === newpassword2) {
       try {
         const { data, error } = await supabase.auth.updateUser({
           password: newpassword1,
@@ -83,13 +80,11 @@ const Profile = () => {
         }
         resetFields();
       } catch (error) {
-
         if (error === "Password should be at least 6 characters.") {
-          setErrorMessage("password must be at least 6 characters ")
+          setErrorMessage("password must be at least 6 characters ");
         } else {
-          setErrorMessage("error updating password. please try again.")
+          setErrorMessage("error updating password. please try again.");
         }
-        
       }
     } else if (newpassword1 !== newpassword2) {
       setErrorMessage("entries dont match");
@@ -110,7 +105,7 @@ const Profile = () => {
           </Text>
         </View>
 
-          <View style={tw`h-5 items-center justify-center -mt-2`}>
+        <View style={tw`h-5 items-center justify-center -mt-2`}>
           {errormessage && (
             <Text style={tw`text-red-600 text-center`}>{errormessage}</Text>
           )}
@@ -118,7 +113,9 @@ const Profile = () => {
 
         <View style={tw`flex-row gap-3 py-2`}>
           <TouchableOpacity
-            onPress={() => {setShowDeleteConfirm(false), setErrorMessage("")}}
+            onPress={() => {
+              setShowDeleteConfirm(false), setErrorMessage("");
+            }}
             style={tw`flex-1 bg-gray-600 py-3 rounded-lg`}
           >
             <Text style={tw`text-gray-200 text-center font-semibold`}>
@@ -237,7 +234,15 @@ const Profile = () => {
     );
 
   useEffect(() => {
-    const getEmailandDate = async () => {
+    const getEmailandDate = async (userid: string | null) => {
+      
+       if (!userId) {
+          setErrorMessage(
+            "failed getting profile information. please try again"
+          );
+          return;
+        }
+      
       try {
         setLoading(true);
 
@@ -256,15 +261,16 @@ const Profile = () => {
 
         setUserMonth(new Date(date).toDateString().split(" ")[1]);
         setUserYear(new Date(date).toDateString().split(" ")[3]);
-        
       } catch (error) {
-          console.log("error fetching user creation date and email");
+        console.log(
+          "error fetching user creation date and email. please try again"
+        );
       } finally {
         setLoading(false);
       }
     };
-    getEmailandDate();
-  }, []);
+    getEmailandDate(userId);
+  }, [userId]);
 
   return (
     <View style={tw`flex-1 bg-gray-900`}>
@@ -276,93 +282,118 @@ const Profile = () => {
         </Text>
       </View>
 
-      {/* User Info Card */}
-      <View style={tw`mx-5 mb-6`}>
-        <View style={tw`bg-gray-800 rounded-xl p-6`}>
-          <View style={tw`flex-row items-center`}>
-            <View style={tw`bg-blue-400 rounded-full p-4 mr-4`}>
-              <Icon name="person" size={32} color="#ffffff" />
+      {errormessage ? (
+        <View style={tw`items-center justify-center mt-6 mx-4`}>
+      <View style={tw`items-center justify-center mt-6 mx-4`}>
+      <View style={tw`bg-red-900/20 border border-red-400/30 rounded-lg px-4 py-3`}>
+        <Text style={tw`text-red-300 text-center text-sm`}>
+          {errormessage}
+        </Text>
+      </View>
+    </View>
+    </View>
+      ) : (
+        <View>
+          <View style={tw`mx-5 mb-6`}>
+            <View style={tw`bg-gray-800 rounded-xl p-6`}>
+              <View style={tw`flex-row items-center`}>
+                <View style={tw`bg-blue-400 rounded-full p-4 mr-4`}>
+                  <Icon name="person" size={32} color="#ffffff" />
+                </View>
+                <View style={tw`flex-1`}>
+                  {loading ? (
+                    <View>
+                      {" "}
+                      <Text style={tw`ml-5 text-white`}>
+                        loading profile data...
+                      </Text>{" "}
+                    </View>
+                  ) : (
+                    <View>
+                      <Text style={tw`text-gray-400`}>{useremail}</Text>
+                      <Text style={tw`text-gray-500 text-sm mt-1`}>
+                        Member since {usermonth} {useryear}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </View>
             </View>
-            <View style={tw`flex-1`}>
-              {loading ? (
-                <View>
-                  {" "}
-                  <Text style={tw`ml-5 text-white`}>
-                    loading profile data...
-                  </Text>{" "}
-                </View>
-              ) : (
-                <View>
-                  <Text style={tw`text-gray-400`}>{useremail}</Text>
-                  <Text style={tw`text-gray-500 text-sm mt-1`}>
-                    Member since {usermonth} {useryear}
-                  </Text>
-                </View>
+          </View>
+
+          <View style={tw`px-5`}>
+            <Text style={tw`text-xl font-bold text-gray-100 mb-4`}>
+              Settings
+            </Text>
+
+            <View style={tw`bg-gray-800 rounded-xl`}>
+              <TouchableOpacity
+                style={tw`flex-row items-center p-4 border-b border-gray-700`}
+                onPress={() => {
+                  setShowPasswordModal(true), setErrorMessage("");
+                }}
+              >
+                <Icon name="person-circle" size={24} color="#9ca3af" />
+                <Text style={tw`text-gray-100 ml-3 flex-1`}>
+                  Change Password
+                </Text>
+                <Icon name="chevron-forward" size={20} color="#6b7280" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={tw`flex-row items-center p-4 border-b border-gray-700`}
+                onPress={() => {
+                  setShowDeleteConfirm(true), setErrorMessage("");
+                }}
+              >
+                <Icon name="trash" size={24} color="#6b7280" />
+                <Text style={tw`text-gray-100 ml-3 flex-1`}>
+                  Delete Account
+                </Text>
+                <Icon name="chevron-forward" size={20} color="#6b7280" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={tw`flex-row items-center p-4`}
+                onPress={handlelogout}
+              >
+                <Icon name="log-out" size={24} color="#f87171" />
+                <Text style={tw`text-red-400 ml-3 flex-1`}>Logout</Text>
+                <Icon name="chevron-forward" size={20} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={tw` items-center justify-center `}>
+              {errormessage === "error logging out. please try again." && (
+                <Text style={tw`text-red-600 text-center`}>{errormessage}</Text>
               )}
             </View>
           </View>
-        </View>
-      </View>
-
-      {/* Settings Section */}
-      <View style={tw`px-5`}>
-        <Text style={tw`text-xl font-bold text-gray-100 mb-4`}>Settings</Text>
-
-        <View style={tw`bg-gray-800 rounded-xl`}>
-          <TouchableOpacity
-            style={tw`flex-row items-center p-4 border-b border-gray-700`}
-            onPress={() => {setShowPasswordModal(true), setErrorMessage("")}}
+          <Modal
+            visible={showpasswordmodal}
+            animationType="slide"
+            transparent={true}
           >
-            <Icon name="person-circle" size={24} color="#9ca3af" />
-            <Text style={tw`text-gray-100 ml-3 flex-1`}>Change Password</Text>
-            <Icon name="chevron-forward" size={20} color="#6b7280" />
-          </TouchableOpacity>
+            {modalContent}
+          </Modal>
 
-          <TouchableOpacity
-            style={tw`flex-row items-center p-4 border-b border-gray-700`}
-            onPress={() => {setShowDeleteConfirm(true), setErrorMessage("")}}
+          <Modal
+            visible={confirmation}
+            animationType="slide"
+            transparent={true}
           >
-            <Icon name="trash" size={24} color="#6b7280" />
-            <Text style={tw`text-gray-100 ml-3 flex-1`}>Delete Account</Text>
-            <Icon name="chevron-forward" size={20} color="#6b7280" />
-          </TouchableOpacity>
+            {confirmationmodal}
+          </Modal>
 
-          <TouchableOpacity
-            style={tw`flex-row items-center p-4`}
-            onPress={handlelogout}
+          <Modal
+            visible={deleteconfirm}
+            animationType="slide"
+            transparent={true}
           >
-            <Icon name="log-out" size={24} color="#f87171" />
-            <Text style={tw`text-red-400 ml-3 flex-1`}>Logout</Text>
-            <Icon name="chevron-forward" size={20} color="#6b7280" />
-          </TouchableOpacity>
-
-          
+            {deleteconfirmationmodal}
+          </Modal>
         </View>
-        
-          <View style={tw` items-center justify-center `}>
-          {errormessage === "error logging out. please try again." && (
-            <Text style={tw`text-red-600 text-center`}>{errormessage}</Text>
-          )}
-        </View>
-
-      </View>
-
-
-      <Modal
-        visible={showpasswordmodal}
-        animationType="slide"
-        transparent={true}
-      >
-        {modalContent}
-      </Modal>
-
-      <Modal visible={confirmation} animationType="slide" transparent={true}>
-        {confirmationmodal}
-      </Modal>
-
-      <Modal visible={deleteconfirm} animationType="slide" transparent={true}>
-        {deleteconfirmationmodal}
-      </Modal>
+      )}
     </View>
   );
 };

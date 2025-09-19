@@ -7,6 +7,7 @@ import {
   Modal,
   TextInput,
   ScrollView,
+  Keyboard,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import tw from "twrnc";
@@ -41,58 +42,60 @@ const Homepage = () => {
   const [newSubmit, setNewSubmit] = useState(0);
   const [loading, setLoading] = useState(false);
   const [errormessage, setErrorMessage] = useState("");
+  const [iderror, setIdError] = useState("");
 
-
-   const clearFields = () => {
-          setActiveModal(false);
-          setNewSubmit(newSubmit + 1);
-          setCurrentPrice("");
-          setCurrentTitle("");
-          setErrorMessage("")
-  }
+  const clearFields = () => {
+    setActiveModal(false);
+    setNewSubmit(newSubmit + 1);
+    setCurrentPrice("");
+    setCurrentTitle("");
+    setErrorMessage("");
+  };
 
   const checkForDailyReset = async () => {
-  try {
-    //Get user's last login
-    const { data, error } = await supabase
-      .from("users")
-      .select("last_login")
-      .eq("id", userId)
-      .single();
-
-    if (error) throw error;
-
-    //Compare dates
-    const today = new Date().toISOString().slice(0, 10); // "2025-09-12"
-    const lastLoginDate = new Date(data.last_login).toISOString().slice(0, 10);
-
-    //Only reset if it's a different day
-    if (lastLoginDate !== today) {
-      //Delete incomplete tasks
-      await supabase
-        .from("tasks")
-        .delete()
-        .eq("is_completed", false)
-        .eq("userid", userId);
-
-      //Update last login date
-      await supabase
+    try {
+      //Get user's last login
+      const { data, error } = await supabase
         .from("users")
-        .update({ last_login: new Date().toISOString() })
-        .eq("id", userId);
+        .select("last_login")
+        .eq("id", userId)
+        .single();
 
-      //Clear local state
-      setTasks([]);
-      setPurchases([]);
+      if (error) throw error;
+
+      //Compare dates
+      const today = new Date().toISOString().slice(0, 10); // "2025-09-12"
+      const lastLoginDate = new Date(data.last_login)
+        .toISOString()
+        .slice(0, 10);
+
+      //Only reset if it's a different day
+      if (lastLoginDate !== today) {
+        //Delete incomplete tasks
+        await supabase
+          .from("tasks")
+          .delete()
+          .eq("is_completed", false)
+          .eq("userid", userId);
+
+        //Update last login date
+        await supabase
+          .from("users")
+          .update({ last_login: new Date().toISOString() })
+          .eq("id", userId);
+
+        //Clear local state
+        setTasks([]);
+        setPurchases([]);
+      }
+    } catch (error) {
+      console.error("Error in daily reset:", error);
     }
-  } catch (error) {
-    console.error("Error in daily reset:", error);
-  }
-};
+  };
 
-useEffect(() => {
-  checkForDailyReset();
-}, []);
+  useEffect(() => {
+    checkForDailyReset();
+  }, []);
 
   useEffect(() => {
     //logic for getting tasks and purchases for user on every render
@@ -109,7 +112,13 @@ useEffect(() => {
     };
 
     //only set loading on initial app load
-    const getTodaysData = async () => {
+    const getTodaysData = async (userId: string | null) => {
+      
+      if (!userId) {
+        setIdError("error loading todays data. please try again.");
+        return;
+      }
+
       if (newSubmit <= 0) {
         setLoading(true);
       }
@@ -150,16 +159,21 @@ useEffect(() => {
       }
     };
 
-    getTodaysData();
+    getTodaysData(userId);
   }, [newSubmit, userId]);
 
   const submitData = async () => {
     if (activeTab === "tasks") {
       //if user submits a new task
+      if (iderror) {
+        setErrorMessage("error submitting task");
+        return;
+      }
       try {
         //bad title
         if (currenttitle.length === 0) {
-          setErrorMessage("task must be non-empty");
+          setErrorMessage("field cannot be empty");
+            return
         } else {
           const { data, error } = await supabase.from("tasks").insert({
             task: currenttitle,
@@ -167,26 +181,39 @@ useEffect(() => {
             is_completed: false,
           });
 
-        if (error) { throw error }
-        else { clearFields() }
-      } } catch (error) {
+          if (error) {
+            throw error;
+          } else {
+            clearFields();
+          }
+        }
+      } catch (error) {
         setErrorMessage("error submitting task");
       }
     } else {
       try {
+        if (iderror) {
+          setErrorMessage("error submitting purchase");
+          return;
+        }
+
         if (currenttitle.length === 0 || currentprice.length === 0) {
-            setErrorMessage("fields cannot be empty")
+          setErrorMessage("fields cannot be empty");
+            return
         } else {
           const { data, error } = await supabase.from("purchases").insert({
-          purchase: currenttitle,
-          userid: userId,
-          price: currentprice,
-        });
+            purchase: currenttitle,
+            userid: userId,
+            price: currentprice,
+          });
 
-        if (error) { throw error } 
-        else { clearFields() }  
-
-     } } catch (error) {
+          if (error) {
+            throw error;
+          } else {
+            clearFields();
+          }
+        }
+      } catch (error) {
         setErrorMessage("error submitting purchase");
       }
     }
@@ -239,6 +266,10 @@ useEffect(() => {
                 placeholder="$0.00"
                 placeholderTextColor="#6b7280"
                 keyboardType="numeric"
+                returnKeyType="done"  // Shows "Done" button
+                onSubmitEditing={() => {
+                Keyboard.dismiss();
+                }}
                 onChangeText={setCurrentPrice}
               />
             </View>
@@ -246,7 +277,11 @@ useEffect(() => {
 
           <View style={tw`h-8 items-center justify-center`}>
             {errormessage && (
-              <Text style={tw`text-red-600 text-center`}>{errormessage}</Text>
+              <View style={tw`bg-red-900/20 border border-red-400/30 rounded-lg px-2 py-1`}>
+        <Text style={tw`text-red-300 text-center text-sm`}>
+          {errormessage}
+        </Text>
+      </View>
             )}
           </View>
 
@@ -353,8 +388,7 @@ useEffect(() => {
       <View style={tw`flex-1 mt-2`}>
         {(activeTab === "tasks" &&
           (loading ||
-            errormessage ===
-              "error loading todays data. please refresh and try again." ||
+            errormessage === "error loading today's tasks. please try again." ||
             (tasks && tasks.length > 0))) ||
         (activeTab === "finance" &&
           (loading ||
@@ -366,10 +400,15 @@ useEffect(() => {
           >
             <View style={tw``}>
               {activeTab === "tasks" &&
-                (errormessage ===
-                "error loading todays data. please refresh and try again." ? (
-                  <View style={tw`items-center justify-center mt-50`}>
-                    <Text style={tw`text-red-400`}>{errormessage}</Text>
+                (errormessage.length !== 0 && errormessage === "error loading todays data. please try again." || iderror.length !== 0 ? (
+                  <View style={tw`items-center justify-center`}>
+                    <View style={tw`items-center justify-center mt-6 mx-4`}>
+      <View style={tw`bg-red-900/20 border border-red-400/30 rounded-lg px-4 py-3`}>
+        <Text style={tw`text-red-300 text-center text-sm`}>
+          error loading today's tasks. please try again
+        </Text>
+      </View>
+    </View>
                   </View>
                 ) : loading ? (
                   <View style={tw`items-center justify-center mt-50`}>
@@ -387,9 +426,15 @@ useEffect(() => {
                   ))
                 ))}
               {activeTab === "finance" &&
-                (errormessage === "error submitting purchase" ? (
-                  <View style={tw`items-center justify-center mt-50`}>
-                    <Text style={tw`text-red-600`}>{errormessage}</Text>
+                (errormessage.length !== 0 && errormessage !== "fields cannot be empty" || iderror.length !== 0 ? (
+                  <View style={tw`items-center justify-center`}>
+                    <View style={tw`items-center justify-center mt-6 mx-4`}>
+      <View style={tw`bg-red-900/20 border border-red-400/30 rounded-lg px-4 py-3`}>
+        <Text style={tw`text-red-300 text-center text-sm`}>
+          error loading todays purchases. please try again.
+        </Text>
+      </View>
+    </View>
                   </View>
                 ) : loading ? (
                   <View style={tw`items-center justify-center mt-50`}>

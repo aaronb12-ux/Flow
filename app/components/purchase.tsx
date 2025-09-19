@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, TextInput, Modal } from "react-native";
+import { View, Text, TouchableOpacity, TextInput, Modal, Keyboard } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { useState } from "react";
 import { supabase } from "../supabaseclient";
@@ -108,12 +108,16 @@ const Purchase = ({ name, id, price, onUpdate }: Props) => {
             keyboardType="numeric"
             value={currentprice.toString()}
             onChangeText={setCurrentPrice}
+            returnKeyType="done"  // Shows "Done" button
+              onSubmitEditing={() => {
+              Keyboard.dismiss();
+            }}
           />
         </View>
 
         <View style={tw`h-8 items-center justify-center`}>
           {errorMessage && (
-            <Text style={tw`text-red-600 text-center`}>{errorMessage}</Text>
+            <Text style={tw`text-red-600 text-center mb-1`}>{errorMessage}</Text>
           )}
         </View>
 

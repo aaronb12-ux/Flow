@@ -170,11 +170,6 @@ const Signup = () => {
           <View style={tw`mb-6`}>
             <View style={tw`flex-row`}>
               <Text style={tw`text-gray-300 text-sm mb-2 ml-1 `}>Password</Text>
-              {badpassword && (
-                <Text style={tw`text-red-600 ml-1 mb-2 mt-.5`}>
-                  {errormessage}
-                </Text>
-              )}
             </View>
             <View
               style={tw`bg-gray-800 rounded-2xl px-4 py-4 flex-row items-center border-2 border-gray-700`}

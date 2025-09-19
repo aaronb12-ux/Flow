@@ -125,7 +125,7 @@ const Signin = () => {
                       includeFontPadding: false, // Remove Android font padding
                     },
                   ]}
-                  placeholder="Create a password"
+                  placeholder="Enter your password"
                   placeholderTextColor="#6B7280"
                   onChangeText={setPassword}
                   secureTextEntry={true}

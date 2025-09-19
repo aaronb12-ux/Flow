@@ -45,6 +45,7 @@ const History = () => {
 
   const { userId } = useUser();
 
+ 
   useEffect(() => {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -54,7 +55,12 @@ const History = () => {
     yesterday.setDate(yesterday.getDate() - 1);
     yesterday.setHours(23, 59, 59, 999);
 
-    const getData = async () => {
+    const getData = async (userId: string | null) => {
+
+      if (!userId) {
+        setErrorMessage("error loading history. please try again")
+        return
+      }
 
       try {
         setLoading(true)
@@ -88,13 +94,13 @@ const History = () => {
           setErrorMessage("");
         }
       } catch (error) {
-           setErrorMessage("error loading data. please try again.")
+           setErrorMessage("error loading history. please try again.")
       } finally {
         setLoading(false)
       }
     } 
-    getData()
-  }, []);
+    getData(userId)
+  }, [userId]);
   
 
   const allItems: CombinedItem[] = [
@@ -131,7 +137,6 @@ const History = () => {
       return day;
     }, [] as Day[]);
 
-    console.log(errormessage)
 
 
   return (
@@ -148,15 +153,25 @@ const History = () => {
   <View style={tw`items-center justify-center flex-row mt-61`}>
     <Text style={tw`text-white`}>loading history...</Text>
   </View>
-) : errormessage ? (
-  <View style={tw`items-center justify-center mt-61`}>
-    <Text style={tw`text-red-400`}>{errormessage}</Text>
+) : errormessage.length !== 0 ? (
+  <View style={tw`items-center justify-center`}>
+     <View style={tw`bg-red-900/20 border border-red-400/30 rounded-lg px-4 py-3 mt-12`}>
+        <Text style={tw`text-red-300 text-center text-sm`}>
+          {errormessage}
+        </Text>
+      </View>
   </View>
 ) : (
   <View style={tw`items-center`}>
     {allItems.length === 0 ? (
       <View> 
-        <Text style={tw`mt-61 text-white`}>no history to show</Text>
+        <View style={tw`items-center justify-center mt-61 mx-4`}>
+      <View style={tw`bg-white/10 border border-white/20 rounded-lg px-4 py-3`}>
+        <Text style={tw`text-white text-center text-sm`}>
+          no history to show
+        </Text>
+      </View>
+    </View>
       </View>
     ) : (
       <View>

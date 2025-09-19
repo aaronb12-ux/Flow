@@ -135,7 +135,7 @@ const Task = ({ name, completed, id, onUpdate }: Props) => {
         </View>
         <View style={tw`h-8 items-center justify-center`}>
           {errorMessage && (
-            <Text style={tw`text-red-600 text-center`}>{errorMessage}</Text>
+            <Text style={tw`text-red-600 text-center mb-1`}>{errorMessage}</Text>
           )}
         </View>
 
