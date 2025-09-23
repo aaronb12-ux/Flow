@@ -24,7 +24,7 @@ const Profile = () => {
   const [deleteconfirm, setShowDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loggingout, setLoggingOut] = useState(false)
-  
+
   // Simplified error states
   const [dataError, setDataError] = useState("");
   const [modalError, setModalError] = useState("");
@@ -313,6 +313,87 @@ const Profile = () => {
     
     getEmailandDate();
   }, [userId]);
+
+
+  if (userId === "dummy") {
+    return (
+  <View style={tw`flex-1 bg-gray-900`}>
+    {/* Header */}
+    <View style={tw`px-5 pt-15 pb-6`}>
+      <Text style={tw`text-4xl font-bold text-gray-50`}>Profile</Text>
+      <Text style={tw`text-base text-gray-400`}>
+        Sign up to save your progress
+      </Text>
+    </View>
+
+    <View>
+      {/* Guest Profile Card */}
+      <View style={tw`mx-5 mb-6`}>
+        <View style={tw`bg-gray-800 rounded-xl p-6`}>
+          <View style={tw`flex-row items-center`}>
+            <View style={tw`bg-gray-600 rounded-full p-4 mr-4`}>
+              <Icon name="person" size={32} color="#9ca3af" />
+            </View>
+            <View style={tw`flex-1`}>
+              <Text style={tw`text-gray-300 text-lg font-semibold`}>Guest User</Text>
+              <Text style={tw`text-gray-500 text-sm mt-1`}>
+                Browsing anonymously
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* Sign Up CTA */}
+      <View style={tw`mx-5 mb-6`}>
+        <View style={tw`bg-gray-900 rounded-xl p-6`}>
+          <Text style={tw`text-white text-lg font-bold mb-2 ml-6`}>
+            Want to save your progress?
+          </Text>
+          <Text style={tw`text-blue-100 text-sm mb-4`}>
+            Create an account to keep track of your data!
+          </Text>
+          <TouchableOpacity style={tw`bg-blue-400 rounded-lg py-3 px-4`}>
+            <Text style={tw`text-white font-semibold text-center`}>
+              Sign Up Now
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+      {/* Auth Options */}
+      <View style={tw`px-5`}>
+        <Text style={tw`text-xl font-bold text-gray-100 mb-4`}>
+          Get Started
+        </Text>
+
+        <View style={tw`bg-gray-800 rounded-xl`}>
+          <TouchableOpacity
+            onPress={() => router.push({ pathname: "/signup"})}
+            style={tw`flex-row items-center p-4 border-b border-gray-700`}
+          >
+            <Icon name="person-add" size={24} color="#60a5fa" />
+            <Text style={tw`text-gray-100 ml-3 flex-1`}>
+              Create Account
+            </Text>
+            <Icon name="chevron-forward" size={20} color="#6b7280" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+          onPress={() => router.push({ pathname: "/signin"})}
+            style={tw`flex-row items-center p-4`}
+          >
+            <Icon name="log-in" size={24} color="#9ca3af" />
+            <Text style={tw`text-gray-100 ml-3 flex-1`}>
+              Sign In
+            </Text>
+            <Icon name="chevron-forward" size={20} color="#6b7280" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  </View>
+);
+  }
 
   return (
     <View style={tw`flex-1 bg-gray-900`}>

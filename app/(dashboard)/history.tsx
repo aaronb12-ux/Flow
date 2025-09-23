@@ -1,9 +1,10 @@
-import { View, Text, ScrollView } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { useUser } from "../usercontext";
 import { supabase } from "../supabaseclient";
 import tw from "twrnc";
 import { useEffect, useState } from "react";
 import Day from "../components/day";
+import { router } from "expo-router";
 
 interface Task {
   id: string;
@@ -136,6 +137,44 @@ const History = () => {
 
       return day;
     }, [] as Day[]);
+
+
+  if (userId === "dummy") {
+    return (
+  <View style={tw`flex-1 bg-gray-900`}>
+    <View style={tw`px-5 pt-15 pb-6`}>
+      <Text style={tw`text-4xl font-bold text-gray-50`}>History</Text>
+      <Text style={tw`text-base text-gray-400`}>
+        View your past 30 tracked days
+      </Text>
+    </View>
+    
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
+      <View style={tw`items-center justify-center mx-4`}>
+        <View style={tw`bg-gray-800 border border-white rounded-lg px-6 py-8`}>
+          <View style={tw`items-center mb-4`}>
+            
+          </View>
+          <Text style={tw`text-white text-center text-lg font-semibold mb-2`}>
+            Create an account to view your history
+          </Text>
+          <Text style={tw`text-white text-center text-sm mb-6`}>
+            Track your history across all devices and never lose your data
+          </Text>
+          <TouchableOpacity 
+            style={tw`bg-blue-400 rounded-lg py-3 px-6`}
+            onPress={() => router.push({ pathname: "/signup"})}
+          >
+            <Text style={tw`text-white font-semibold text-center`}>
+              Sign Up Now
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </ScrollView>
+  </View>
+);
+  }
 
 
 

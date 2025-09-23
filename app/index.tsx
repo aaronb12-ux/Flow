@@ -22,14 +22,17 @@ export default function Index() {
         if (error?.message === "Auth session missing!") {
           throw error.message
         } else if (data.user) {
+          //current user session
           console.log('setting user and pushing to homepage')
           setUserId(data.user.id)
           setLoading(false)
           router.push({ pathname: "/(dashboard)/homepage" });
         }
       } catch (error) {
-        console.log('exiting function. going to login page')
+        //no current signed in user. send to homepage but show sample daya
+        setUserId("dummy")
         setLoading(false)
+        router.push({pathname: "/(dashboard)/homepage"})
         return
       }      
   }

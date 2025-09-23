@@ -52,6 +52,26 @@ const Homepage = () => {
     setModalError("");
   };
 
+  const getDummyData = async () => {
+      try {
+        setLoading(true)
+        const { data, error } = await supabase.from('dummy_tasks').select("*").eq("is_initial", true)
+    
+        if (data) {
+          setTasks(data)
+        }
+
+        if (error) {
+          throw error
+        }
+      } catch (error) {
+        console.log('error getting initial tasks', error)
+      } finally {
+        setLoading(false)
+      }
+  }
+
+
   const checkForDailyReset = async () => {
     if (!userId) return;
 
@@ -106,8 +126,11 @@ const Homepage = () => {
 
   useEffect(() => {
     const initializeApp = async () => {
-      if (userId) {
+      if (userId && userId !== "dummy") {
         await checkForDailyReset(); // Wait for reset to complete first
+      } 
+      else {
+        await getDummyData();
       }
     };
     
@@ -130,6 +153,11 @@ const Homepage = () => {
 
     //only set loading on initial app load
     const getTodaysData = async (userId: string | null) => {
+
+      if (userId === "dummy") {
+        console.log('returning from getting todays data. dummy user')
+        return
+      }
       
       if (!userId) {
         setDataError("error loading todays data. please try again.");
@@ -179,6 +207,7 @@ const Homepage = () => {
     };
 
     getTodaysData(userId);
+
   }, [newSubmit, userId]);
 
   const submitData = async () => {
