@@ -12,33 +12,42 @@ interface Props {
 }
 
 const Task = ({ name, completed, id, onUpdate }: Props) => {
-  //next add feature where if user holds down on task bar, theres an edit and delete option
   const [holdpress, setholdpress] = useState(false);
   const [currenttask, setCurrentTask] = useState(name);
   const [errorMessage, setErrorMessage] = useState("");
   const [toggleError, setToggleError] = useState(false);
+  
+  // Local state for optimistic updates
+  const [localCompleted, setLocalCompleted] = useState(completed);
+  const [isToggling, setIsToggling] = useState(false);
 
- const toggleerrormodal = (
-  <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
-    <View style={tw`bg-gray-800 p-3 rounded-lg w-75 shadow-xl border border-gray-700 pr-3`}>
-      <View style={tw`flex-row justify-between items-center`}>
-        <Text style={tw`text-gray-300 text-sm flex-1 pr-2`}>
-          Error toggling task. Please try again.
-        </Text>
-        <TouchableOpacity onPress={() =>{setToggleError(false), setErrorMessage("")}}>
-          <Icon name="close" size={16} color="#9ca3af" />
-        </TouchableOpacity>
+  const toggleerrormodal = (
+    <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50 px-6`}>
+      <View style={tw`bg-red-900/20 border border-red-400/30 rounded-lg p-4 shadow-xl w-full max-w-sm`}>
+        <View style={tw`flex-row justify-between items-center`}>
+          <Text style={tw`text-red-300 text-center text-sm flex-1 pr-3`}>
+            Error toggling task. Please try again.
+          </Text>
+          <TouchableOpacity onPress={() => {setToggleError(false), setErrorMessage("")}}>
+            <Icon name="close" size={18} color="#ef4444" />
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
-  </View>
-)
+  )
 
   const toggletask = async () => {
-    const newCompleted = !completed;
-    //if new completed is false, then decrament tasks completed
-    //if new completed is true, then incrament tasks completed
+    // Prevent double-clicks during API call
+    if (isToggling) return;
+    
+    const newCompleted = !localCompleted;
+    
+    // Optimistic update - change UI immediately
+    setLocalCompleted(newCompleted);
+    setIsToggling(true);
+    
     try {
-      const { data, error } = await supabase //do modal for this
+      const { data, error } = await supabase
         .from("tasks")
         .update({
           is_completed: newCompleted,
@@ -47,42 +56,44 @@ const Task = ({ name, completed, id, onUpdate }: Props) => {
         .select();
 
       if (error) {   
+        // Revert optimistic update on error
+        setLocalCompleted(!newCompleted);
         throw error;
-      }
-      else {
+      } else {
         onUpdate((prev) => prev + 1);
-        setErrorMessage("")
+        setErrorMessage("");
       }
-
     } catch (error) {
       setErrorMessage("error toggling task. please try again");
-      setToggleError(true)
+      setToggleError(true);
+    } finally {
+      setIsToggling(false);
     }
   };
 
   const updateTask = async () => {
     try {
       if (currenttask.length == 0) {
-          setErrorMessage("field cannot be empty")
+        setErrorMessage("field cannot be empty")
       } else {
-         const { data, error } = await supabase
-        .from("tasks")
-        .update({
-          task: currenttask,
-        })
-        .eq("id", id)
-        .select();
+        const { data, error } = await supabase
+          .from("tasks")
+          .update({
+            task: currenttask,
+          })
+          .eq("id", id)
+          .select();
 
-      if (error) {
-        throw error;
-      } else {
-        onUpdate((prev) => prev + 1);
-        setholdpress(false);
-        setErrorMessage("")
-      }
+        if (error) {
+          throw error;
+        } else {
+          onUpdate((prev) => prev + 1);
+          setholdpress(false);
+          setErrorMessage("")
+        }
       }
     } catch (error) {
-      setErrorMessage("error updating task. please try again");
+      setErrorMessage("error updating task");
     }
   };
 
@@ -101,7 +112,7 @@ const Task = ({ name, completed, id, onUpdate }: Props) => {
         setErrorMessage("")
       }
     } catch (error) {
-      setErrorMessage("error deleting task. please try again");
+      setErrorMessage("error deleting task");
     }
   };
 
@@ -135,7 +146,11 @@ const Task = ({ name, completed, id, onUpdate }: Props) => {
         </View>
         <View style={tw`h-8 items-center justify-center`}>
           {errorMessage && (
-            <Text style={tw`text-red-600 text-center mb-1`}>{errorMessage}</Text>
+           <View style={tw`bg-red-900/20 border border-red-400/30 rounded-lg px-4 py-1`}>
+        <Text style={tw`text-red-300 text-center text-sm`}>
+         {errorMessage}
+        </Text>
+      </View>
           )}
         </View>
 
@@ -169,12 +184,14 @@ const Task = ({ name, completed, id, onUpdate }: Props) => {
     <View>
       <TouchableOpacity onLongPress={holdpressrun}>
         <View
-          style={tw`flex-row items-center justify-between bg-gray-800 p-4 rounded-xl w-85 shadow-2xl border border-gray-700 mt-2`}
+          style={tw`flex-row items-center justify-between bg-gray-800 p-4 rounded-xl w-85 shadow-2xl border border-gray-700 mt-2 ${
+            isToggling ? 'opacity-70' : 'opacity-100'
+          }`}
         >
           <View style={tw`flex-1 mr-4`}>
             <Text
               style={tw`text-white text-base font-medium ${
-                completed ? "line-through text-gray-400" : ""
+                localCompleted ? "line-through text-gray-400" : ""
               }`}
             >
               {name}
@@ -183,11 +200,12 @@ const Task = ({ name, completed, id, onUpdate }: Props) => {
           <View>
             <TouchableOpacity
               style={tw`w-6 h-6 border-2 ${
-                completed ? "bg-green-500 border-green-500" : "border-gray-400"
+                localCompleted ? "bg-green-500 border-green-500" : "border-gray-400"
               } rounded-md flex items-center justify-center`}
               onPress={toggletask}
+              disabled={isToggling}
             >
-              {completed && (
+              {localCompleted && (
                 <Text style={tw`text-white text-sm font-bold`}>✓</Text>
               )}
             </TouchableOpacity>
@@ -199,7 +217,7 @@ const Task = ({ name, completed, id, onUpdate }: Props) => {
         {modalContent}
       </Modal>
 
-       <Modal visible={toggleError} transparent={true}>
+      <Modal visible={toggleError} transparent={true}>
         {toggleerrormodal}
       </Modal>
     </View>

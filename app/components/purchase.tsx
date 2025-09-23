@@ -47,7 +47,7 @@ const Purchase = ({ name, id, price, onUpdate }: Props) => {
         }
       }
     } catch (error) {
-      setErrorMessage("error updating purchase. please try again");
+      setErrorMessage("error updating purchase");
     }
   };
 
@@ -66,7 +66,7 @@ const Purchase = ({ name, id, price, onUpdate }: Props) => {
         setErrorMessage("");
       }
     } catch (error) {
-      setErrorMessage("error deleting purchase. please try again");
+      setErrorMessage("error deleting purchase");
     }
   };
 
@@ -117,7 +117,11 @@ const Purchase = ({ name, id, price, onUpdate }: Props) => {
 
         <View style={tw`h-8 items-center justify-center`}>
           {errorMessage && (
-            <Text style={tw`text-red-600 text-center mb-1`}>{errorMessage}</Text>
+           <View style={tw`bg-red-900/20 border border-red-400/30 rounded-lg py-1`}>
+        <Text style={tw`text-red-300 text-center text-sm px-2`}>
+          {errorMessage}
+        </Text>
+      </View>
           )}
         </View>
 

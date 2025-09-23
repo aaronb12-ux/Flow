@@ -9,8 +9,10 @@ if (!url || !apikey) {
 }
 
 export const supabase = createClient(
+
     url, //url
     apikey, //api
+
     {
         auth: {
             storage: AsyncStorage,

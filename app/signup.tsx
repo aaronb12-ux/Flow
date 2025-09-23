@@ -1,4 +1,4 @@
-import { Text, View, TextInput, TouchableOpacity } from "react-native";
+import { Text, View, TextInput, TouchableOpacity, Modal } from "react-native";
 import React, { useState } from "react";
 import tw from "twrnc";
 import { supabase } from "./supabaseclient";
@@ -16,9 +16,9 @@ const Signup = () => {
   const [badpassword, setBadPassWord] = useState(false);
   const [bademail, setBadEmail] = useState(false);
   const [errormessage, setErrorMessage] = useState("");
+  const [signingup, setSigningUp] = useState(false)
 
   const handleSignupError = (error: any) => {
-    console.log(error.message)
     switch (error.message) {
       case "User already registered":
         setAlreadyRegistered(true);
@@ -39,13 +39,12 @@ const Signup = () => {
 
   const signupuser = async () => {
     try {
+      setSigningUp(true)
       setAlreadyRegistered(false);
       setBadPassWord(false);
       setBadEmail(false);
       setErrorMessage("");
-
       const { data, error } = await supabase.auth.signUp(
-
         {
           email: email,
           password: password,
@@ -54,11 +53,10 @@ const Signup = () => {
 
       if (error) {
         handleSignupError(error);
-        console.log('error')
       }
 
       if (!data.user) {
-        return
+        return 
       }
 
       const { error: profileError } = await supabase.from("users").insert({
@@ -76,9 +74,23 @@ const Signup = () => {
       router.push({ pathname: "/(dashboard)/homepage" });
     } catch (error) {
       console.error("Unexpected error during signup: ", error);
-      setErrorMessage("An unexpected error occured. Please try again.");
+      setErrorMessage("error signing up user. check your internet.");
+    } finally {
+      setSigningUp(false)
     }
   };
+
+    const signupmodal = (
+  <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50 px-6 z-5`}>
+     <View style={tw`items-center justify-center mx-4`}>
+      <View style={tw`bg-white/10 border border-white/20 rounded-lg px-4 py-3`}>
+        <Text style={tw`text-white text-center text-sm`}>
+          signing up...
+        </Text>
+      </View>
+    </View>
+  </View>
+)
 
   return (
     <View style={tw`flex-1 bg-gray-900`}>
@@ -117,7 +129,15 @@ const Signup = () => {
           <Text style={tw`text-gray-400 text-center`}>
             Join Flow to manage your money and tasks
           </Text>
-          <Text style={tw`text-red-600 text-center mt-2`}>{errormessage}</Text>
+           <View style={tw`h-10 justify-center`}>
+  {errormessage && (
+    <View style={tw`bg-red-900/20 border border-red-400/30 rounded-lg px-2 py-1`}>
+      <Text style={tw`text-red-300 text-center text-sm`}>
+        {errormessage}
+      </Text>
+    </View>
+  )}
+</View>
         </View>
 
         {/* Form section */}
@@ -226,6 +246,12 @@ const Signup = () => {
           </View>
         </View>
       </View>
+       <Modal
+                            visible={signingup}
+                            transparent={true}
+                        >
+                              {signupmodal}
+                      </Modal>
     </View>
   );
 };

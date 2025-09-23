@@ -21,9 +21,14 @@ const Profile = () => {
   const [newpassword1, setNewPassword1] = useState("");
   const [newpassword2, setNewPassword2] = useState("");
   const [confirmation, setConfirmation] = useState(false);
-  const [errormessage, setErrorMessage] = useState("");
   const [deleteconfirm, setShowDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loggingout, setLoggingOut] = useState(false)
+  
+  // Simplified error states
+  const [dataError, setDataError] = useState("");
+  const [modalError, setModalError] = useState("");
+  const [logoutError, setLogoutError] = useState("");
 
   const { userId } = useUser();
 
@@ -32,10 +37,12 @@ const Profile = () => {
     setNewPassword1("");
     setNewPassword2("");
     setConfirmation(true);
-    setErrorMessage("");
+    setModalError("");
   };
 
   const handledelete = async () => {
+    setModalError("");
+    
     try {
       const { error } = await supabase.rpc("delete_user_account");
 
@@ -44,14 +51,16 @@ const Profile = () => {
       } else {
         setShowDeleteConfirm(false);
         router.push({ pathname: "/" });
-        setErrorMessage("");
       }
     } catch (error) {
-      setErrorMessage("error deleting account");
+      setModalError("error deleting account");
     }
   };
 
   const handlelogout = async () => {
+    setLogoutError("");
+    setLoggingOut(true)
+    
     try {
       const { error } = await supabase.auth.signOut();
 
@@ -59,35 +68,47 @@ const Profile = () => {
         throw error;
       } else {
         router.push({ pathname: "/" });
-        setErrorMessage("");
       }
     } catch (error) {
-      setErrorMessage("error logging out. please try again.");
+      setLogoutError("error logging out. please try again.");
+    } finally {
+      setLoggingOut(false)
     }
   };
 
   const resetPassword = async () => {
+    setModalError("");
+    
     if (newpassword1.length === 0 || newpassword2.length === 0) {
-      setErrorMessage("password must be at least 6 characters");
-    } else if (newpassword1 === newpassword2) {
-      try {
-        const { data, error } = await supabase.auth.updateUser({
-          password: newpassword1,
-        });
+      setModalError("password must be at least 6 characters");
+      return;
+    }
+    
+    if (newpassword1 !== newpassword2) {
+      setModalError("entries do not match");
+      return;
+    }
+    
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        password: newpassword1,
+      });
 
-        if (error) {
-          throw error.message;
-        }
-        resetFields();
-      } catch (error) {
-        if (error === "Password should be at least 6 characters.") {
-          setErrorMessage("password must be at least 6 characters ");
-        } else {
-          setErrorMessage("error updating password. please try again.");
-        }
+      if (error) {
+        throw error.message;
       }
-    } else if (newpassword1 !== newpassword2) {
-      setErrorMessage("entries dont match");
+      resetFields();
+    } catch (error) {
+      if (error === "Password should be at least 6 characters.") {
+        setModalError("password must be at least 6 characters");
+      } 
+      else if (error === "New password should be different from the old password.") {
+        setModalError("new password must be different")
+      }
+      
+      else {
+        setModalError("error updating password");
+      }
     }
   };
 
@@ -105,16 +126,20 @@ const Profile = () => {
           </Text>
         </View>
 
-        <View style={tw`h-5 items-center justify-center -mt-2`}>
-          {errormessage && (
-            <Text style={tw`text-red-600 text-center`}>{errormessage}</Text>
+        <View style={tw`h-8 items-center justify-center`}>
+          {modalError && (
+            <View style={tw`bg-red-900/20 border border-red-400/30 rounded-lg px-2 py-1`}>
+              <Text style={tw`text-red-300 text-center text-sm`}>
+                {modalError}
+              </Text>
+            </View>
           )}
         </View>
 
-        <View style={tw`flex-row gap-3 py-2`}>
+        <View style={tw`flex-row gap-3 mt-2`}>
           <TouchableOpacity
             onPress={() => {
-              setShowDeleteConfirm(false), setErrorMessage("");
+              setShowDeleteConfirm(false), setModalError("");
             }}
             style={tw`flex-1 bg-gray-600 py-3 rounded-lg`}
           >
@@ -135,6 +160,18 @@ const Profile = () => {
       </View>
     </View>
   );
+
+  const logoutmodal = (
+  <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50 px-6 z-5`}>
+     <View style={tw`items-center justify-center mx-4`}>
+      <View style={tw`bg-white/10 border border-white/20 rounded-lg px-4 py-3`}>
+        <Text style={tw`text-white text-center text-sm`}>
+          logging out...
+        </Text>
+      </View>
+    </View>
+  </View>
+)
 
   const confirmationmodal = (
     <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
@@ -185,6 +222,7 @@ const Profile = () => {
               placeholder="Enter new password..."
               placeholderTextColor="#6b7280"
               secureTextEntry={true}
+              value={newpassword1}
               onChangeText={setNewPassword1}
             />
           </View>
@@ -198,20 +236,26 @@ const Profile = () => {
               placeholder="Confirm new password..."
               placeholderTextColor="#6b7280"
               secureTextEntry={true}
+              value={newpassword2}
               onChangeText={setNewPassword2}
             />
           </View>
-          <View style={tw`flex items-center justify-center`}>
-            <Text style={tw`text-red-600 font-bold text-xs`}>
-              {errormessage}
-            </Text>
+          
+          <View style={tw`h-8 items-center justify-center`}>
+            {modalError && (
+              <View style={tw`bg-red-900/20 border border-red-400/30 rounded-lg px-1 py-1`}>
+                <Text style={tw`text-red-300 text-center text-sm`}>
+                  {modalError}
+                </Text>
+              </View>
+            )}
           </View>
 
-          <View style={tw`flex-row gap-3 mt-6`}>
+          <View style={tw`flex-row gap-3 mt-2`}>
             <TouchableOpacity
               onPress={() => {
                 setShowPasswordModal(false);
-                setErrorMessage("");
+                setModalError("");
               }}
               style={tw`flex-1 bg-gray-600 py-3 rounded-lg`}
             >
@@ -234,18 +278,16 @@ const Profile = () => {
     );
 
   useEffect(() => {
-    const getEmailandDate = async (userid: string | null) => {
+    const getEmailandDate = async () => {
+      if (!userId) {
+        setDataError("failed getting profile information. check your internet");
+        return;
+      }
       
-       if (!userId) {
-          setErrorMessage(
-            "failed getting profile information. please try again"
-          );
-          return;
-        }
-      
-      try {
-        setLoading(true);
+      setDataError("");
+      setLoading(true);
 
+      try {
         const { data, error } = await supabase
           .from("users")
           .select("email, created_at")
@@ -262,14 +304,14 @@ const Profile = () => {
         setUserMonth(new Date(date).toDateString().split(" ")[1]);
         setUserYear(new Date(date).toDateString().split(" ")[3]);
       } catch (error) {
-        console.log(
-          "error fetching user creation date and email. please try again"
-        );
+        setDataError("failed getting profile information. please try again");
+        console.log("error fetching user creation date and email. please try again");
       } finally {
         setLoading(false);
       }
     };
-    getEmailandDate(userId);
+    
+    getEmailandDate();
   }, [userId]);
 
   return (
@@ -278,20 +320,18 @@ const Profile = () => {
       <View style={tw`px-5 pt-15 pb-6`}>
         <Text style={tw`text-4xl font-bold text-gray-50`}>Profile</Text>
         <Text style={tw`text-base text-gray-400`}>
-          Manage your account and view your progress
+          Manage your account
         </Text>
       </View>
 
-      {errormessage ? (
+      {dataError ? (
         <View style={tw`items-center justify-center mt-6 mx-4`}>
-      <View style={tw`items-center justify-center mt-6 mx-4`}>
-      <View style={tw`bg-red-900/20 border border-red-400/30 rounded-lg px-4 py-3`}>
-        <Text style={tw`text-red-300 text-center text-sm`}>
-          {errormessage}
-        </Text>
-      </View>
-    </View>
-    </View>
+          <View style={tw`bg-red-900/20 border border-red-400/30 rounded-lg px-4 py-3`}>
+            <Text style={tw`text-red-300 text-center text-sm`}>
+              {dataError}
+            </Text>
+          </View>
+        </View>
       ) : (
         <View>
           <View style={tw`mx-5 mb-6`}>
@@ -303,10 +343,9 @@ const Profile = () => {
                 <View style={tw`flex-1`}>
                   {loading ? (
                     <View>
-                      {" "}
                       <Text style={tw`ml-5 text-white`}>
                         loading profile data...
-                      </Text>{" "}
+                      </Text>
                     </View>
                   ) : (
                     <View>
@@ -330,7 +369,7 @@ const Profile = () => {
               <TouchableOpacity
                 style={tw`flex-row items-center p-4 border-b border-gray-700`}
                 onPress={() => {
-                  setShowPasswordModal(true), setErrorMessage("");
+                  setShowPasswordModal(true), setModalError("");
                 }}
               >
                 <Icon name="person-circle" size={24} color="#9ca3af" />
@@ -343,7 +382,7 @@ const Profile = () => {
               <TouchableOpacity
                 style={tw`flex-row items-center p-4 border-b border-gray-700`}
                 onPress={() => {
-                  setShowDeleteConfirm(true), setErrorMessage("");
+                  setShowDeleteConfirm(true), setModalError("");
                 }}
               >
                 <Icon name="trash" size={24} color="#6b7280" />
@@ -363,12 +402,17 @@ const Profile = () => {
               </TouchableOpacity>
             </View>
 
-            <View style={tw` items-center justify-center `}>
-              {errormessage === "error logging out. please try again." && (
-                <Text style={tw`text-red-600 text-center`}>{errormessage}</Text>
+            <View style={tw`h-8 items-center justify-center mt-4`}>
+              {logoutError && (
+                <View style={tw`bg-red-900/20 border border-red-400/30 rounded-lg px-2 py-1`}>
+                  <Text style={tw`text-red-300 text-center text-sm`}>
+                    {logoutError}
+                  </Text>
+                </View>
               )}
             </View>
           </View>
+          
           <Modal
             visible={showpasswordmodal}
             animationType="slide"
@@ -392,6 +436,14 @@ const Profile = () => {
           >
             {deleteconfirmationmodal}
           </Modal>
+
+          <Modal
+              visible={loggingout}
+              transparent={true}
+          >
+                {logoutmodal}
+        </Modal>
+
         </View>
       )}
     </View>

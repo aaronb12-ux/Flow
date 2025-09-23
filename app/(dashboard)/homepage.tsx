@@ -41,18 +41,20 @@ const Homepage = () => {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [newSubmit, setNewSubmit] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [errormessage, setErrorMessage] = useState("");
-  const [iderror, setIdError] = useState("");
+  const [dataError, setDataError] = useState("");
+  const [modalError, setModalError] = useState("");
 
   const clearFields = () => {
     setActiveModal(false);
     setNewSubmit(newSubmit + 1);
     setCurrentPrice("");
     setCurrentTitle("");
-    setErrorMessage("");
+    setModalError("");
   };
 
   const checkForDailyReset = async () => {
+    if (!userId) return;
+
     try {
       //Get user's last login
       const { data, error } = await supabase
@@ -63,19 +65,28 @@ const Homepage = () => {
 
       if (error) throw error;
 
-      //Compare dates
-      const today = new Date().toISOString().slice(0, 10); // "2025-09-12"
+      //Compare dates using local timezone
+      const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD format
       const lastLoginDate = new Date(data.last_login)
-        .toISOString()
-        .slice(0, 10);
+        .toLocaleDateString('en-CA');
 
       //Only reset if it's a different day
       if (lastLoginDate !== today) {
-        //Delete incomplete tasks
+        //Delete incomplete tasks only (keep completed for 30-day history)
         await supabase
           .from("tasks")
           .delete()
           .eq("is_completed", false)
+          .eq("userid", userId);
+
+        //Clean up tasks older than 30 days
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        await supabase
+          .from("tasks")
+          .delete()
+          .lt("created_at", thirtyDaysAgo.toISOString())
           .eq("userid", userId);
 
         //Update last login date
@@ -94,8 +105,14 @@ const Homepage = () => {
   };
 
   useEffect(() => {
-    checkForDailyReset();
-  }, []);
+    const initializeApp = async () => {
+      if (userId) {
+        await checkForDailyReset(); // Wait for reset to complete first
+      }
+    };
+    
+    initializeApp();
+  }, [userId]);
 
   useEffect(() => {
     //logic for getting tasks and purchases for user on every render
@@ -115,13 +132,15 @@ const Homepage = () => {
     const getTodaysData = async (userId: string | null) => {
       
       if (!userId) {
-        setIdError("error loading todays data. please try again.");
+        setDataError("error loading todays data. please try again.");
         return;
       }
 
       if (newSubmit <= 0) {
         setLoading(true);
       }
+
+      setDataError("");
 
       try {
         //consecutive api calls in promise.all
@@ -147,13 +166,13 @@ const Homepage = () => {
         if (tasksResult.error) throw tasksResult.error.message;
 
         if (purchasesResult.data) {
-          setPurchases(purchasesResult.data), setErrorMessage("");
+          setPurchases(purchasesResult.data);
         }
         if (tasksResult.data) {
-          setTasks(tasksResult.data), setErrorMessage("");
+          setTasks(tasksResult.data);
         }
       } catch (error) {
-        setErrorMessage("error loading todays data. please try again.");
+        setDataError("error loading todays data. please try again.");
       } finally {
         setLoading(false);
       }
@@ -163,17 +182,20 @@ const Homepage = () => {
   }, [newSubmit, userId]);
 
   const submitData = async () => {
+    if (!userId) {
+      setModalError("error submitting data");
+      return;
+    }
+
+    setModalError("");
+
     if (activeTab === "tasks") {
       //if user submits a new task
-      if (iderror) {
-        setErrorMessage("error submitting task");
-        return;
-      }
       try {
         //bad title
         if (currenttitle.length === 0) {
-          setErrorMessage("field cannot be empty");
-            return
+          setModalError("field cannot be empty");
+          return;
         } else {
           const { data, error } = await supabase.from("tasks").insert({
             task: currenttitle,
@@ -188,18 +210,13 @@ const Homepage = () => {
           }
         }
       } catch (error) {
-        setErrorMessage("error submitting task");
+        setModalError("error submitting task");
       }
     } else {
       try {
-        if (iderror) {
-          setErrorMessage("error submitting purchase");
-          return;
-        }
-
         if (currenttitle.length === 0 || currentprice.length === 0) {
-          setErrorMessage("fields cannot be empty");
-            return
+          setModalError("fields cannot be empty");
+          return;
         } else {
           const { data, error } = await supabase.from("purchases").insert({
             purchase: currenttitle,
@@ -214,7 +231,7 @@ const Homepage = () => {
           }
         }
       } catch (error) {
-        setErrorMessage("error submitting purchase");
+        setModalError("error submitting purchase");
       }
     }
   };
@@ -241,7 +258,7 @@ const Homepage = () => {
             </Text>
             <TouchableOpacity
               onPress={() => {
-                setActiveModal(false), setErrorMessage("");
+                setActiveModal(false), setModalError("");
               }}
             >
               <Icon name="close" size={24} color="#9ca3af" />
@@ -276,10 +293,10 @@ const Homepage = () => {
           )}
 
           <View style={tw`h-8 items-center justify-center`}>
-            {errormessage && (
+            {modalError && (
               <View style={tw`bg-red-900/20 border border-red-400/30 rounded-lg px-2 py-1`}>
         <Text style={tw`text-red-300 text-center text-sm`}>
-          {errormessage}
+          {modalError}
         </Text>
       </View>
             )}
@@ -288,7 +305,7 @@ const Homepage = () => {
           <View style={tw`flex-row gap-3 mt-2`}>
             <TouchableOpacity
               onPress={() => {
-                setActiveModal(false), setErrorMessage("");
+                setActiveModal(false), setModalError("");
               }}
               style={tw`flex-1 bg-gray-600 py-3 rounded-lg`}
             >
@@ -388,11 +405,11 @@ const Homepage = () => {
       <View style={tw`flex-1 mt-2`}>
         {(activeTab === "tasks" &&
           (loading ||
-            errormessage === "error loading today's tasks. please try again." ||
+            dataError ||
             (tasks && tasks.length > 0))) ||
         (activeTab === "finance" &&
           (loading ||
-            errormessage === "error submitting purchase" ||
+            dataError ||
             (purchases && purchases.length > 0))) ? (
           <ScrollView
             style={{ flex: 1 }}
@@ -400,7 +417,7 @@ const Homepage = () => {
           >
             <View style={tw``}>
               {activeTab === "tasks" &&
-                (errormessage.length !== 0 && errormessage === "error loading todays data. please try again." || iderror.length !== 0 ? (
+                (dataError ? (
                   <View style={tw`items-center justify-center`}>
                     <View style={tw`items-center justify-center mt-6 mx-4`}>
       <View style={tw`bg-red-900/20 border border-red-400/30 rounded-lg px-4 py-3`}>
@@ -426,7 +443,7 @@ const Homepage = () => {
                   ))
                 ))}
               {activeTab === "finance" &&
-                (errormessage.length !== 0 && errormessage !== "fields cannot be empty" || iderror.length !== 0 ? (
+                (dataError ? (
                   <View style={tw`items-center justify-center`}>
                     <View style={tw`items-center justify-center mt-6 mx-4`}>
       <View style={tw`bg-red-900/20 border border-red-400/30 rounded-lg px-4 py-3`}>

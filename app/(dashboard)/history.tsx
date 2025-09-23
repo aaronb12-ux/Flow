@@ -58,7 +58,7 @@ const History = () => {
     const getData = async (userId: string | null) => {
 
       if (!userId) {
-        setErrorMessage("error loading history. please try again")
+        setErrorMessage("error loading history. check your internet connection.")
         return
       }
 
@@ -144,7 +144,7 @@ const History = () => {
       <View style={tw`px-5 pt-15 pb-6`}>
           <Text style={tw`text-4xl font-bold text-gray-50`}>History</Text>
           <Text style={tw`text-base text-gray-400`}>
-            View your past 30 days
+            View your past 30 tracked days
           </Text>
         </View>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>

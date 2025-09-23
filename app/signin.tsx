@@ -1,4 +1,4 @@
-import { Text, View, TextInput, TouchableOpacity } from "react-native";
+import { Text, View, TextInput, TouchableOpacity, Modal } from "react-native";
 import React, { useState } from "react";
 import tw from "twrnc";
 import { supabase } from "./supabaseclient";
@@ -13,29 +13,57 @@ const Signin = () => {
   const [password, setPassword] = useState("");
   const { setUserId } = useUser();
   const [badCredentials, setBadCredentials] = useState("");
+  const [signingin, setSigningIn] = useState(false)
 
   const signinuser = async () => {
+    
     try {
+      setSigningIn(true)
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email,
         password: password,
       });
 
       if (error) {
-        throw error
+        throw error.message
       }
 
       if (!data.user) {
-        console.error("failed to fetch user information upon signup", error);
+        throw "user error"
       } else {
-        console.log("signing in the user");
         setUserId(data.user.id);
         router.push({ pathname: "/(dashboard)/homepage" });
       }
     } catch (error) {
-      setBadCredentials("Invalid login credentials");
+        if (error === "Invalid login credentials"){
+          setBadCredentials("Invalid login credentials")
+          return
+        };
+        if (error === "missing email or phone"){
+          setBadCredentials("fields cannot be blank")
+          return
+        }
+        else {
+          setBadCredentials("error logging in user. check your internet.")
+          return
+        }
+    } finally {
+      setSigningIn(false)
     }
   };
+
+
+   const signinmodal = (
+  <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50 px-6 z-5`}>
+     <View style={tw`items-center justify-center mx-4`}>
+      <View style={tw`bg-white/10 border border-white/20 rounded-lg px-4 py-3`}>
+        <Text style={tw`text-white text-center text-sm`}>
+          signing in...
+        </Text>
+      </View>
+    </View>
+  </View>
+)
 
   return (
     <UserProvider>
@@ -67,7 +95,19 @@ const Signin = () => {
               </View>
             </View>
             <Text style={tw`text-2xl font-bold text-white mb-2`}>Sign In</Text>
-            <Text style={tw`text-red-600 text-center`}>{badCredentials}</Text>
+             
+             
+             
+          <View style={tw`h-10 justify-center`}>
+{badCredentials && (
+  <View style={tw`bg-red-900/20 border border-red-400/30 rounded-lg px-3 py-2 mx-2`}>
+    <Text style={tw`text-red-300 text-center text-sm leading-relaxed`}>
+      {badCredentials}
+    </Text>
+  </View>
+)}
+</View>
+           
           </View>
 
           {/* Form section */}
@@ -163,6 +203,12 @@ const Signin = () => {
             </View>
           </View>
         </View>
+        <Modal
+                      visible={signingin}
+                      transparent={true}
+                  >
+                        {signinmodal}
+                </Modal>
       </View>
     </UserProvider>
   );
