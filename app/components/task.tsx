@@ -61,7 +61,7 @@ const Task = ({ name, completed, id, onUpdate }: Props) => {
         <Icon name="lock-closed" size={32} color="#60a5fa" />
       </View>
       <Text style={tw`text-white text-lg font-semibold text-center mb-2`}>
-        Sign up to edit and delete
+        Sign up to edit and delete tasks and purchases
       </Text>
       <Text style={tw`text-gray-400 text-sm text-center mb-6`}>
         Create an account to customize and manage your own tasks and purchases

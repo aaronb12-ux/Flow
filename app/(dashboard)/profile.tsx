@@ -331,8 +331,8 @@ const Profile = () => {
       <View style={tw`mx-5 mb-6`}>
         <View style={tw`bg-gray-800 rounded-xl p-6`}>
           <View style={tw`flex-row items-center`}>
-            <View style={tw`bg-gray-600 rounded-full p-4 mr-4`}>
-              <Icon name="person" size={32} color="#9ca3af" />
+            <View style={tw`bg-blue-400 rounded-full p-4 mr-4`}>
+              <Icon name="person" size={32} color="#ffffff" />
             </View>
             <View style={tw`flex-1`}>
               <Text style={tw`text-gray-300 text-lg font-semibold`}>Guest User</Text>

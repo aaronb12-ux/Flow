@@ -15,6 +15,7 @@ import { supabase } from "../supabaseclient";
 import Task from "../components/task";
 import Purchase from "../components/purchase";
 import { useUser } from "../usercontext";
+import SignUpModal from '../components/signupmodal'
 
 interface Task {
   id: string;
@@ -43,6 +44,7 @@ const Homepage = () => {
   const [loading, setLoading] = useState(false);
   const [dataError, setDataError] = useState("");
   const [modalError, setModalError] = useState("");
+  const [dummymodal, setDummyModal] = useState(false)
 
   const clearFields = () => {
     setActiveModal(false);
@@ -60,7 +62,6 @@ const Homepage = () => {
         if (data) {
           setTasks(data)
         }
-
         if (error) {
           throw error
         }
@@ -216,13 +217,18 @@ const Homepage = () => {
       return;
     }
 
+    if (userId === "dummy") {
+      setActiveModal(false)
+      setDummyModal(true)
+    }
+
     setModalError("");
 
     if (activeTab === "tasks") {
       //if user submits a new task
       try {
         //bad title
-        if (currenttitle.length === 0) {
+        if (currenttitle.length === 0 && userId !== "dummy") {
           setModalError("field cannot be empty");
           return;
         } else {
@@ -515,6 +521,13 @@ const Homepage = () => {
 
       <Modal visible={activemodal} animationType="slide" transparent={true}>
         {modalContent}
+      </Modal>
+
+      <Modal visible={dummymodal} animationType="slide" transparent={true}>
+        <SignUpModal
+          message="create"
+          setDummyModal={setDummyModal}
+        />
       </Modal>
     </View>
   );
