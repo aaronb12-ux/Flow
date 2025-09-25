@@ -56,19 +56,31 @@ const Homepage = () => {
 
   const getDummyData = async () => {
       try {
-        setLoading(true)
-        const { data, error } = await supabase.from('dummy_tasks').select("*").eq("is_initial", true)
-    
-        if (data) {
-          setTasks(data)
+        //consecutive api calls in promise.all
+        const [purchasesResult, tasksResult] = await Promise.all([
+          supabase
+            .from("dummy_purchases")
+            .select("*"),
+
+          supabase
+            .from("dummy_tasks")
+            .select("*")
+        ]);
+
+        if (purchasesResult.error) throw purchasesResult.error.message;
+        if (tasksResult.error) throw tasksResult.error.message;
+
+        if (purchasesResult.data) {
+          setPurchases(purchasesResult.data);
         }
-        if (error) {
-          throw error
+        if (tasksResult.data) {
+          setTasks(tasksResult.data);
         }
       } catch (error) {
-        console.log('error getting initial tasks', error)
+        console.log(error)
+        setDataError("error loading todays data. please try again.");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
   }
 
@@ -156,7 +168,6 @@ const Homepage = () => {
     const getTodaysData = async (userId: string | null) => {
 
       if (userId === "dummy") {
-        console.log('returning from getting todays data. dummy user')
         return
       }
       
@@ -250,7 +261,9 @@ const Homepage = () => {
     } else {
       try {
         if (currenttitle.length === 0 || currentprice.length === 0) {
-          setModalError("fields cannot be empty");
+          if (userId && userId !== "dummy") {
+            setModalError("fields cannot be empty");
+          }
           return;
         } else {
           const { data, error } = await supabase.from("purchases").insert({
@@ -404,6 +417,16 @@ const Homepage = () => {
             : "Track your daily spending habits"}
         </Text>
       </View>
+
+ 
+
+  {userId === "dummy" && (
+      <View style={tw`mb-5 -mt-5`}>
+        <Text style={tw`text-gray-500 text-center text-sm`}>
+          📋 Demo Mode - Explore sample {activeTab} below
+        </Text>
+      </View>
+    )} 
 
       {/* Toggle Switch */}
       <View style={tw`flex-row bg-gray-800 rounded-xl p-1`}>

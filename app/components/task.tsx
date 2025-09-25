@@ -161,7 +161,6 @@ const Task = ({ name, completed, id, onUpdate }: Props) => {
 
   const deleteTask = async () => {
 
-
     if (userId && userId !== "dummy") {
 try {
       const { data, error } = await supabase

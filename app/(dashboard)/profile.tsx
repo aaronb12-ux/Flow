@@ -353,7 +353,9 @@ const Profile = () => {
           <Text style={tw`text-blue-100 text-sm mb-4`}>
             Create an account to keep track of your data!
           </Text>
-          <TouchableOpacity style={tw`bg-blue-400 rounded-lg py-3 px-4`}>
+          <TouchableOpacity style={tw`bg-blue-400 rounded-lg py-3 px-4`}
+          onPress={() => router.push({ pathname: "/signup"})}
+          >
             <Text style={tw`text-white font-semibold text-center`}>
               Sign Up Now
             </Text>

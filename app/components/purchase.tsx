@@ -1,8 +1,17 @@
-import { View, Text, TouchableOpacity, TextInput, Modal, Keyboard } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  Modal,
+  Keyboard,
+} from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { useState } from "react";
 import { supabase } from "../supabaseclient";
 import tw from "twrnc";
+import { useUser } from "../usercontext";
+import { router } from "expo-router";
 
 interface Props {
   id: string;
@@ -17,6 +26,8 @@ const Purchase = ({ name, id, price, onUpdate }: Props) => {
   const [currentname, setCurrentName] = useState(name);
   const [currentprice, setCurrentPrice] = useState(price.toString());
   const [errorMessage, setErrorMessage] = useState("");
+  const [signmodalactive, setSignModalActive] = useState(false);
+  const { userId } = useUser();
 
   const holdpressrun = () => {
     setholdpress(true);
@@ -25,18 +36,45 @@ const Purchase = ({ name, id, price, onUpdate }: Props) => {
   };
 
   const updatePurchase = async () => {
-    try {
-      if (currentname.length === 0 || currentprice.length === 0) {
-        setErrorMessage("fields cannot be empty");
-      } else {
+    if (userId && userId !== "dummy") {
+      try {
+        if (currentname.length === 0 || currentprice.length === 0) {
+          setErrorMessage("fields cannot be empty");
+        } else {
+          const { data, error } = await supabase
+            .from("purchases")
+            .update({
+              purchase: currentname,
+              price: currentprice,
+            })
+            .eq("id", id)
+            .select();
+
+          if (error) {
+            throw error;
+          } else {
+            onUpdate((prev) => prev + 1);
+            setholdpress(false);
+            setErrorMessage("");
+          }
+        }
+      } catch (error) {
+        setErrorMessage("error updating purchase");
+      }
+    } else {
+      setholdpress(false);
+      setSignModalActive(true);
+      console.log("sign up to edit!");
+    }
+  };
+
+  const deletePurchase = async () => {
+    if (userId && userId !== "dummy") {
+      try {
         const { data, error } = await supabase
           .from("purchases")
-          .update({
-            purchase: currentname,
-            price: currentprice,
-          })
-          .eq("id", id)
-          .select();
+          .delete()
+          .eq("id", id);
 
         if (error) {
           throw error;
@@ -45,28 +83,13 @@ const Purchase = ({ name, id, price, onUpdate }: Props) => {
           setholdpress(false);
           setErrorMessage("");
         }
+      } catch (error) {
+        setErrorMessage("error deleting purchase");
       }
-    } catch (error) {
-      setErrorMessage("error updating purchase");
-    }
-  };
-
-  const deletePurchase = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("purchases")
-        .delete()
-        .eq("id", id);
-
-      if (error) {
-        throw error;
-      } else {
-        onUpdate((prev) => prev + 1);
-        setholdpress(false);
-        setErrorMessage("");
-      }
-    } catch (error) {
-      setErrorMessage("error deleting purchase");
+    } else {
+      setholdpress(false);
+      setSignModalActive(true);
+      console.log("sign up to delete!");
     }
   };
 
@@ -108,8 +131,8 @@ const Purchase = ({ name, id, price, onUpdate }: Props) => {
             keyboardType="numeric"
             value={currentprice.toString()}
             onChangeText={setCurrentPrice}
-            returnKeyType="done"  // Shows "Done" button
-              onSubmitEditing={() => {
+            returnKeyType="done" // Shows "Done" button
+            onSubmitEditing={() => {
               Keyboard.dismiss();
             }}
           />
@@ -117,11 +140,13 @@ const Purchase = ({ name, id, price, onUpdate }: Props) => {
 
         <View style={tw`h-8 items-center justify-center`}>
           {errorMessage && (
-           <View style={tw`bg-red-900/20 border border-red-400/30 rounded-lg py-1`}>
-        <Text style={tw`text-red-300 text-center text-sm px-2`}>
-          {errorMessage}
-        </Text>
-      </View>
+            <View
+              style={tw`bg-red-900/20 border border-red-400/30 rounded-lg py-1`}
+            >
+              <Text style={tw`text-red-300 text-center text-sm px-2`}>
+                {errorMessage}
+              </Text>
+            </View>
           )}
         </View>
 
@@ -140,6 +165,47 @@ const Purchase = ({ name, id, price, onUpdate }: Props) => {
             onPress={updatePurchase}
           >
             <Text style={tw`text-white text-center font-semibold`}>update</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+
+  const signupmodal = (
+    <View
+      style={tw`flex-1 justify-center items-center bg-black bg-opacity-50 px-6`}
+    >
+      <View
+        style={tw`bg-gray-800 border border-gray-700 rounded-lg p-6 shadow-xl w-full max-w-sm`}
+      >
+        <View style={tw`items-center mb-4`}>
+          <Icon name="lock-closed" size={32} color="#60a5fa" />
+        </View>
+        <Text style={tw`text-white text-lg font-semibold text-center mb-2`}>
+          Sign up to edit and delete tasks and purchases
+        </Text>
+        <Text style={tw`text-gray-400 text-sm text-center mb-6`}>
+          Create an account to customize and manage your own tasks and purchases
+        </Text>
+        <View style={tw`flex-row gap-x-5`}>
+          <TouchableOpacity
+            style={tw`flex-1 bg-gray-700 rounded-lg py-3`}
+            onPress={() => setSignModalActive(false)}
+          >
+            <Text style={tw`text-gray-300 font-medium text-center`}>
+              Cancel
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={tw`flex-1 bg-blue-400 rounded-lg py-3`}
+            onPress={() => {
+              setSignModalActive(false);
+              router.push({ pathname: "/signup" });
+            }}
+          >
+            <Text style={tw`text-white font-semibold text-center`}>
+              Sign Up
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -168,6 +234,10 @@ const Purchase = ({ name, id, price, onUpdate }: Props) => {
       </TouchableOpacity>
       <Modal visible={holdpress} animationType="slide" transparent={true}>
         {modalContent}
+      </Modal>
+
+      <Modal visible={signmodalactive} animationType="slide" transparent={true}>
+        {signupmodal}
       </Modal>
     </View>
   );
