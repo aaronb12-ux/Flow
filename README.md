@@ -23,27 +23,6 @@ Flow is my first mobile application, currently under App Store review. I created
 - **Database:** PostgreSQL with real-time sync
 - **Platform:** iOS (App Store submission in progress)
 
-## 🎯 Design Philosophy
-
-Flow was built with simplicity and functionality in mind. Rather than overwhelming users with countless features, it focuses on the core essentials:
-
-- Quick task creation and completion
-- Easy expense logging
-- Clear activity overview
-- Minimal, intuitive interface
-
-## 🚀 Development Timeline
-
-**June 2025 - August 2025**
-
-This project marked my entry into mobile development, where I learned:
-
-- Mobile-first development principles
-- React Native framework and ecosystem
-- Supabase integration for managed backend services
-- App Store submission and review process
-- Responsive mobile UI/UX design
-- Real-time data synchronization
 
 ## 📊 Key Learning Outcomes
 
@@ -52,11 +31,3 @@ This project marked my entry into mobile development, where I learned:
 - **Production Deployment:** Navigated the complete app store submission process
 - **UI/UX Design:** Created responsive, mobile-optimized user interfaces
 - **Product Focus:** Balanced feature scope with usability and simplicity
-
-## 📝 Current Status
-
-The app is currently under review for the App Store and will be available for iOS users upon approval.
-
-## 🎨 Core Principle
-
-**Less is more** - Flow proves that a well-designed, focused app can be more valuable than feature-heavy alternatives by doing a few things exceptionally well.
